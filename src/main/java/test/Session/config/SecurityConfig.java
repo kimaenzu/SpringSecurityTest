@@ -4,26 +4,38 @@ package test.Session.config;
 Override를 통해서 여러 설정 조정
  */
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import test.Session.jwt.JwtAuthenticationFilter;
+import test.Session.jwt.JwtTokenProvider;
+import test.Session.security.dto.TokenDto;
+import test.Session.security.service.MemService;
+import test.Session.security.service.UserDS;
 
 @Configuration
 @Log4j2
+@EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+    private final JwtTokenProvider jwtTokenProvider;
+    private final UserDS userDS;
+
+
     @Bean
     PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
+
 
 //    @Bean
 //    public InMemoryUserDetailsManager userDetailsService() {
@@ -36,12 +48,16 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        log.info("start filterChain");
         http.authorizeRequests((auth) -> {
-            auth.requestMatchers( "/sample/all.html").permitAll();
-            auth.requestMatchers("/sample/member.html").hasRole("USER");
-            auth.requestMatchers("/sample/manager.html").hasRole("MEMBER");
-            auth.requestMatchers("/sample/admin.html").hasRole("ADMIN");
-        });
+            auth.requestMatchers( "/sample/all").permitAll();
+            auth.requestMatchers("/sample/member").hasRole("USER");
+            auth.requestMatchers("/sample/manager").hasRole("MEMBER");
+            auth.requestMatchers("/sample/admin").hasRole("ADMIN");
+            auth.requestMatchers("/sample/login").permitAll();
+        }).addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+        log.info("ended JwtAuthenticationFilter");
+
         http.formLogin(Customizer.withDefaults());
         http.csrf(c -> c
                 .disable());
