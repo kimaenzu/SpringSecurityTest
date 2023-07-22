@@ -39,15 +39,17 @@ public class UserDS implements UserDetailsService {
             throw new UsernameNotFoundException("Check Email of Social");
         }
 
+        System.out.println("result : "+ result);
         // 여기까지 오면 인증이 완료된 상태
 
         Mem mem = result.get();
         log.info(mem);
 
-        TokenDto token = memService.login(mem.getName(), mem.getPassword());
+        //TokenDto token = memService.login(mem.getEmail(), mem.getPassword());
         AuthMemDTO authMemDTO = new AuthMemDTO(
                 mem.getEmail(),
-                passwordEncoder.encode(mem.getPassword()),
+//                passwordEncoder.encode(mem.getPassword()),
+                mem.getPassword(),
                 mem.isFromSocial(),
                 mem.getRoleSet().stream()
                         .map(role -> new SimpleGrantedAuthority("ROLE_"+role.name())).collect(Collectors.toSet()));
